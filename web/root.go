@@ -12,13 +12,18 @@ import (
 
 type ServiceState struct {
 	ID, Name, Status, ClassName string
-	Replicas, Running uint64
+	Replicas, Running           uint64
 }
 
-type ServiceStateGroup map[string][]ServiceState
+type ServiceStateGroup struct {
+	Status, ClassName string
+	Services          []ServiceState
+}
+
+type ServiceStateGroupMap map[string]ServiceStateGroup
 
 type ServiceStatusPageData struct {
-	Groups ServiceStateGroup
+	Groups    ServiceStateGroupMap
 	Timestamp string
 }
 
@@ -32,14 +37,28 @@ func getStatusText(replicas uint64, running uint64) string {
 	}
 }
 
-func getClassName(replicas uint64, running uint64) string {
-	if replicas == running {
+func getClassNameFromStatusText(status string) string {
+	switch status {
+	case "OK":
 		return "success"
-	} else if running > 0 {
+	case "Warning":
 		return "warning"
-	} else {
+	case "Error":
 		return "danger"
 	}
+	return ""
+}
+
+func pickWorstText(a string, b string) string {
+	if a == "Error" || b == "Error" {
+		return "Error"
+	}
+
+	if a == "Warning" || b == "Warning" {
+		return "Warning"
+	}
+
+	return "OK"
 }
 
 func RootHandler(w http.ResponseWriter, r *http.Request) {
@@ -65,9 +84,7 @@ func RootHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println(services)
-
-	groups := make(ServiceStateGroup)
+	groups := make(ServiceStateGroupMap)
 	for _, service := range services {
 		name := service.Name
 		if val, ok := service.Labels[displayNameKey]; ok {
@@ -79,24 +96,34 @@ func RootHandler(w http.ResponseWriter, r *http.Request) {
 			groupName = val
 		}
 
-		groups[groupName] = append(groups[groupName], ServiceState{
+		statusText := getStatusText(service.Replicas, service.Running)
+
+		s := append(groups[groupName].Services, ServiceState{
 			ID:        service.ID,
 			Name:      name,
-			Status:    getStatusText(service.Replicas, service.Running),
-			ClassName: getClassName(service.Replicas, service.Running),
+			Status:    statusText,
+			ClassName: getClassNameFromStatusText(statusText),
 			Replicas:  service.Replicas,
 			Running:   service.Running,
 		})
+
+		groupStatusText := pickWorstText(statusText, groups[groupName].Status)
+
+		groups[groupName] = ServiceStateGroup{
+			Status:    groupStatusText,
+			ClassName: getClassNameFromStatusText(groupStatusText),
+			Services:  s,
+		}
 	}
 
 	for _, val := range groups {
-		sort.Slice(val, func(i, j int) bool {
-			return val[i].Name < val[j].Name
+		sort.Slice(val.Services, func(i, j int) bool {
+			return val.Services[i].Name < val.Services[j].Name
 		})
 	}
 
 	err = tmpl.Execute(w, ServiceStatusPageData{
-		Groups: groups,
+		Groups:    groups,
 		Timestamp: time.Now().Format("Mon Jan _2 15:04:05"),
 	})
 
