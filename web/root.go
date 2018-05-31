@@ -6,6 +6,8 @@ import (
 	"swarm-stats/docker"
 	"html/template"
 	"time"
+	"sort"
+	"os"
 )
 
 type ServiceState struct {
@@ -13,9 +15,11 @@ type ServiceState struct {
 	Replicas, Running uint64
 }
 
+type ServiceStateGroup map[string][]ServiceState
+
 type ServiceStatusPageData struct {
-	Services []ServiceState
-	Timestamp time.Time
+	Groups ServiceStateGroup
+	Timestamp string
 }
 
 func getStatusText(replicas uint64, running uint64) string {
@@ -39,6 +43,16 @@ func getClassName(replicas uint64, running uint64) string {
 }
 
 func RootHandler(w http.ResponseWriter, r *http.Request) {
+	displayNameKey := os.Getenv("DISPLAY_NAME_LABEL_KEY")
+	if displayNameKey == "" {
+		displayNameKey = "com.example.display.name"
+	}
+
+	groupNameKey := os.Getenv("DISPLAY_GROUP_LABEL_KEY")
+	if groupNameKey == "" {
+		groupNameKey = "com.example.display.group"
+	}
+
 	tmpl, err := template.ParseFiles("templates/serviceStatus.html")
 	if err != nil {
 		fmt.Fprint(w, err)
@@ -51,11 +65,23 @@ func RootHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var states []ServiceState
+	fmt.Println(services)
+
+	groups := make(ServiceStateGroup)
 	for _, service := range services {
-		states = append(states, ServiceState{
+		name := service.Name
+		if val, ok := service.Labels[displayNameKey]; ok {
+			name = val
+		}
+
+		groupName := "Other"
+		if val, ok := service.Labels[groupNameKey]; ok {
+			groupName = val
+		}
+
+		groups[groupName] = append(groups[groupName], ServiceState{
 			ID:        service.ID,
-			Name:      service.Name,
+			Name:      name,
 			Status:    getStatusText(service.Replicas, service.Running),
 			ClassName: getClassName(service.Replicas, service.Running),
 			Replicas:  service.Replicas,
@@ -63,7 +89,18 @@ func RootHandler(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	fmt.Println(states)
+	for _, val := range groups {
+		sort.Slice(val, func(i, j int) bool {
+			return val[i].Name < val[j].Name
+		})
+	}
 
-	tmpl.Execute(w, ServiceStatusPageData{Services: states, Timestamp: time.Now().UTC() })
+	err = tmpl.Execute(w, ServiceStatusPageData{
+		Groups: groups,
+		Timestamp: time.Now().Format("Mon Jan _2 15:04:05"),
+	})
+
+	if err != nil {
+		fmt.Println(err)
+	}
 }
