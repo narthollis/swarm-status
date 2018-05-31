@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Service Status</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+          integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel="stylesheet" href="static/cover.css"/>
+</head>
+<body class="text-center">
+<div class="cover-container d-flex h-100 p-3 mx-auto flex-column">
+    <header class="masthead mb-auto">
+        <div class="inner">
+            <h3 class="masthead-brand">Cluster Status</h3>
+            <nav class="nav nav-masthead justify-content-center">
+                <a class="nav-link active" href="#">Home</a>
+                <a class="nav-link" href="#">Features</a>
+                <a class="nav-link" href="#">Contact</a>
+            </nav>
+        </div>
+    </header>
+    <main role="main" class="inner cover">
+        <table class="table">
+            <thead>
+            <tr>
+                <th>Name</th>
+                <th>Nodes</th>
+                <th>Status</th>
+            </tr>
+            </thead>
+            <tbody>
+            {{range .Services}}
+            <tr>
+                <td>{{ .Name }}</td>
+                <td>{{ .Running }} / {{ .Replicas }}</td>
+                <td class="table-{{ .ClassName }}">
+                {{ .Status }}
+                </td>
+            </tr>
+            {{end}}
+            </tbody>
+        </table>
+        <h2>Last Updated: {{ .Timestamp }}</h2>
+    </main>
+    <footer class="mastfoot mt-auto">
+        <div class="inner">
+            <p>Cover template for <a href="https://getbootstrap.com/">Bootstrap</a>, by <a
+                    href="https://twitter.com/mdo">@mdo</a>.</p>
+        </div>
+    </footer>
+    <script type="application/javascript">
+        "use strict";
+
+        setTimeout(function () {
+            window.location.reload();
+        }, 30000)
+    </script>
+</div>
+</body>
+</html>
