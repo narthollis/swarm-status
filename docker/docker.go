@@ -10,10 +10,10 @@ import (
 )
 
 type ServiceState struct {
-	ID, Name string
+	ID, Name          string
 	Replicas, Running uint64
-	Labels map[string]string
-	UpdatedAt time.Time
+	Labels            map[string]string
+	UpdatedAt         time.Time
 }
 
 func setApiVersion() {
@@ -66,11 +66,11 @@ func ReadServiceList() ([]ServiceState, error) {
 			}
 
 			var serviceState = ServiceState{
-				ID:   service.ID,
-				Name: service.Spec.Name,
-				Labels: service.Spec.Labels,
-				Replicas: *service.Spec.Mode.Replicated.Replicas,
-				Running: runningTasks,
+				ID:        service.ID,
+				Name:      service.Spec.Name,
+				Labels:    service.Spec.Labels,
+				Replicas:  *service.Spec.Mode.Replicated.Replicas,
+				Running:   runningTasks,
 				UpdatedAt: t,
 			}
 

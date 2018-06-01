@@ -44,7 +44,7 @@ body {
 }
 
 .cover-container {
-    max-width: 42em;
+    /*max-width: 42em;*/
     min-width: 40em;
 }
 
@@ -109,4 +109,25 @@ body {
  */
 .mastfoot {
     color: rgba(255, 255, 255, .5);
+}
+
+td, th {
+    white-space: nowrap;
+    min-width: 8rem;
+}
+
+thead.group {
+    cursor: pointer;
+}
+
+tbody.hidden {
+    display: none;
+}
+
+.status-icon {
+    float: right;
+}
+
+.history {
+    width: 288px;
 }

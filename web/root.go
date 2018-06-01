@@ -6,27 +6,13 @@ import (
 	"swarm-status/docker"
 	"html/template"
 	"time"
-	"sort"
-	"os"
 )
 
-type ServiceState struct {
-	ID, Name, ClassName string
-	Status              Status
-	Replicas, Running   uint64
-}
-
-type ServiceStateGroup struct {
-	Status   Status
-	Services []ServiceState
-}
-
-type ServiceStateGroupMap map[string]ServiceStateGroup
-
 type ServiceStatusPageData struct {
-	Groups        ServiceStateGroupMap
-	Timestamp     string
-	OverallStatus Status
+	Groups               ServiceStateGroupMap
+	Timestamp            string
+	OverallStatus        Status
+	OverallStatusVerbose string
 }
 
 func computeStatus(replicas uint64, running uint64) Status {
@@ -39,72 +25,40 @@ func computeStatus(replicas uint64, running uint64) Status {
 	}
 }
 
-func RootHandler(w http.ResponseWriter, r *http.Request) {
-	displayNameKey := os.Getenv("DISPLAY_NAME_LABEL_KEY")
-	if displayNameKey == "" {
-		displayNameKey = "com.example.display.name"
-	}
+func MakeRootHandler() http.HandlerFunc {
+	settings := GetEnvSettings()
 
-	groupNameKey := os.Getenv("DISPLAY_GROUP_LABEL_KEY")
-	if groupNameKey == "" {
-		groupNameKey = "com.example.display.group"
-	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		tmpl, err := template.ParseFiles("templates/serviceStatus.html")
 
-	tmpl, err := template.ParseFiles("templates/serviceStatus.html")
-	if err != nil {
-		fmt.Fprint(w, err)
-		return
-	}
-
-	services, err := docker.ReadServiceList()
-	if err != nil {
-		fmt.Fprint(w, err)
-		return
-	}
-
-	overallStatus := Operational
-	groups := make(ServiceStateGroupMap)
-	for _, service := range services {
-		name := service.Name
-		if val, ok := service.Labels[displayNameKey]; ok {
-			name = val
+		if err != nil {
+			panic(err)
 		}
 
-		groupName := "Other"
-		if val, ok := service.Labels[groupNameKey]; ok {
-			groupName = val
+		services, err := docker.ReadServiceList()
+		if err != nil {
+			fmt.Fprint(w, err)
+			return
 		}
 
-		status := computeStatus(service.Replicas, service.Running)
-		s := append(groups[groupName].Services, ServiceState{
-			ID:       service.ID,
-			Name:     name,
-			Status:   status,
-			Replicas: service.Replicas,
-			Running:  service.Running,
+		groups := MakeServiceStateGroupMap(&settings, services)
+
+		overallStatus := Operational
+		for _, g := range groups {
+			for _, s := range g.Services {
+				overallStatus = s.Status.PickWorst(overallStatus)
+			}
+		}
+
+		err = tmpl.Execute(w, ServiceStatusPageData{
+			Groups:               groups,
+			Timestamp:            time.Now().Format("Mon Jan _2 15:04:05"),
+			OverallStatus:        overallStatus,
+			OverallStatusVerbose: overallStatus.Overview(),
 		})
 
-		overallStatus = status.PickWorst(overallStatus)
-
-		groups[groupName] = ServiceStateGroup{
-			Status:   status.PickWorst(groups[groupName].Status),
-			Services: s,
+		if err != nil {
+			fmt.Println(err)
 		}
-	}
-
-	for _, val := range groups {
-		sort.Slice(val.Services, func(i, j int) bool {
-			return val.Services[i].Name < val.Services[j].Name
-		})
-	}
-
-	err = tmpl.Execute(w, ServiceStatusPageData{
-		Groups:        groups,
-		Timestamp:     time.Now().Format("Mon Jan _2 15:04:05"),
-		OverallStatus: overallStatus,
-	})
-
-	if err != nil {
-		fmt.Println(err)
 	}
 }

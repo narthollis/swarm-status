@@ -1,5 +1,7 @@
 package web
 
+import "encoding/json"
+
 type Status int
 
 const (
@@ -20,6 +22,17 @@ func (status Status) String() string {
 
 	return names[status]
 }
+
+func (status Status) MarshalJSON() ([]byte, error) {
+	return json.Marshal(&struct {
+		Value, ClassName, Icon string
+	}{
+		Value:     status.String(),
+		ClassName: status.ClassName(),
+		Icon:      status.Icon(),
+	})
+}
+
 func (status Status) ClassName() string {
 	classNames := [...]string{
 		"success",
