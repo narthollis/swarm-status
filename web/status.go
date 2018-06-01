@@ -33,6 +33,19 @@ func (status Status) ClassName() string {
 	return classNames[status]
 }
 
+func (status Status) Icon() string {
+	icons := [...]string{
+		"fa-check-circle",
+		"fa-bell",
+		"fa-exclamation-triangle",
+	}
+	if status < Operational || status > Critical {
+		return ""
+	}
+
+	return icons[status]
+}
+
 func (status Status) Overview() string {
 	classNames := [...]string{
 		"All Systems Operational",
