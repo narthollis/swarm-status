@@ -11,7 +11,7 @@
 <div class="cover-container d-flex h-100 p-3 mx-auto flex-column">
     <header class="masthead mb-auto">
         <div class="inner">
-            <h3 class="masthead-brand">Cluster Status</h3>
+            <h3 class="masthead-brand">Status</h3>
             <nav class="nav nav-masthead justify-content-center">
                 <a class="nav-link active" href="./">Services</a>
                 <a class="nav-link" href="./metrics">Metrics</a>
@@ -19,6 +19,9 @@
         </div>
     </header>
     <main role="main" class="inner cover table-responsive">
+        <div class="alert alert-{{ .OverallStatus.ClassName }}" role="alert">
+            <h4 class="alert-heading">{{ .OverallStatus.Overview }}</h4>
+        </div>
         <table class="table table-dark table-striped table-sm">
             <caption>Last Updated: {{ .Timestamp }}</caption>
             <thead class="thead-light">
@@ -29,18 +32,18 @@
             </tr>
             </thead>
         {{range $groupName, $group := .Groups}}
-            <thead class="thead-dark">
+            <thead class="thead-dark" data-for="{{ $groupName }}" style="cursor: pointer;">
             <tr>
-                <th colspan="2">{{ $groupName }}</th>
-                <th class="bg-{{ $group.ClassName }}">{{ $group.Status }}</th>
+                <th colspan="2" style="text-align: left; padding-left: 2rem;">{{ $groupName }}</th>
+                <th class="bg-{{ $group.Status.ClassName }}">{{ $group.Status }}</th>
             </tr>
             </thead>
-            <tbody>
+            <tbody id="{{ $groupName }}" style="display: {{if eq $group.Status 0}}none{{else}}table-row-group{{end}};">
             {{ range $group.Services }}
             <tr>
-                <td>{{ .Name }}</td>
+                <td style="text-align: left;">{{ .Name }}</td>
                 <td>{{ .Running }} / {{ .Replicas }}</td>
-                <td class="bg-{{ .ClassName }}">{{ .Status }}</td>
+                <td class="bg-{{ .Status.ClassName }}">{{ .Status }}</td>
             </tr>
             {{end}}
             </tbody>
@@ -59,6 +62,20 @@
         setTimeout(function () {
             window.location.reload();
         }, 30000)
+
+        document.querySelectorAll('thead[data-for]').forEach((thead) => {
+            thead.addEventListener('click', (evt) => {
+                const forId = evt.currentTarget.dataset['for'];
+                if (forId != null) {
+                    const tbody = document.getElementById(forId);
+                    if (tbody.style.display == 'none') {
+                        tbody.style.display = 'table-row-group'
+                    } else {
+                        tbody.style.display = 'none'
+                    }
+                }
+            })
+        });
     </script>
 </div>
 </body>

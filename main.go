@@ -2,7 +2,7 @@ package main
 
 import (
 	"net/http"
-	"swarm-stats/web"
+	"swarm-status/web"
 )
 
 func main() {

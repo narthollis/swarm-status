@@ -3,7 +3,7 @@ package web
 import (
 	"net/http"
 	"fmt"
-	"swarm-stats/docker"
+	"swarm-status/docker"
 	"html/template"
 	"time"
 	"sort"
@@ -11,54 +11,32 @@ import (
 )
 
 type ServiceState struct {
-	ID, Name, Status, ClassName string
-	Replicas, Running           uint64
+	ID, Name, ClassName string
+	Status              Status
+	Replicas, Running   uint64
 }
 
 type ServiceStateGroup struct {
-	Status, ClassName string
-	Services          []ServiceState
+	Status   Status
+	Services []ServiceState
 }
 
 type ServiceStateGroupMap map[string]ServiceStateGroup
 
 type ServiceStatusPageData struct {
-	Groups    ServiceStateGroupMap
-	Timestamp string
+	Groups        ServiceStateGroupMap
+	Timestamp     string
+	OverallStatus Status
 }
 
-func getStatusText(replicas uint64, running uint64) string {
+func computeStatus(replicas uint64, running uint64) Status {
 	if replicas == running {
-		return "OK"
+		return Operational
 	} else if running > 0 {
-		return "Warning"
+		return Unhealthy
 	} else {
-		return "Error"
+		return Critical
 	}
-}
-
-func getClassNameFromStatusText(status string) string {
-	switch status {
-	case "OK":
-		return "success"
-	case "Warning":
-		return "warning"
-	case "Error":
-		return "danger"
-	}
-	return ""
-}
-
-func pickWorstText(a string, b string) string {
-	if a == "Error" || b == "Error" {
-		return "Error"
-	}
-
-	if a == "Warning" || b == "Warning" {
-		return "Warning"
-	}
-
-	return "OK"
 }
 
 func RootHandler(w http.ResponseWriter, r *http.Request) {
@@ -84,6 +62,7 @@ func RootHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	overallStatus := Operational
 	groups := make(ServiceStateGroupMap)
 	for _, service := range services {
 		name := service.Name
@@ -96,23 +75,20 @@ func RootHandler(w http.ResponseWriter, r *http.Request) {
 			groupName = val
 		}
 
-		statusText := getStatusText(service.Replicas, service.Running)
-
+		status := computeStatus(service.Replicas, service.Running)
 		s := append(groups[groupName].Services, ServiceState{
-			ID:        service.ID,
-			Name:      name,
-			Status:    statusText,
-			ClassName: getClassNameFromStatusText(statusText),
-			Replicas:  service.Replicas,
-			Running:   service.Running,
+			ID:       service.ID,
+			Name:     name,
+			Status:   status,
+			Replicas: service.Replicas,
+			Running:  service.Running,
 		})
 
-		groupStatusText := pickWorstText(statusText, groups[groupName].Status)
+		overallStatus = status.PickWorst(overallStatus)
 
 		groups[groupName] = ServiceStateGroup{
-			Status:    groupStatusText,
-			ClassName: getClassNameFromStatusText(groupStatusText),
-			Services:  s,
+			Status:   status.PickWorst(groups[groupName].Status),
+			Services: s,
 		}
 	}
 
@@ -123,8 +99,9 @@ func RootHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = tmpl.Execute(w, ServiceStatusPageData{
-		Groups:    groups,
-		Timestamp: time.Now().Format("Mon Jan _2 15:04:05"),
+		Groups:        groups,
+		Timestamp:     time.Now().Format("Mon Jan _2 15:04:05"),
+		OverallStatus: overallStatus,
 	})
 
 	if err != nil {
