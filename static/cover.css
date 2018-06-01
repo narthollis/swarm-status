@@ -116,6 +116,15 @@ td, th {
     min-width: 8rem;
 }
 
+th.group-name {
+    text-align: left;
+    padding-left: 2rem;
+}
+
+td.service {
+    text-align: left;
+}
+
 thead.group {
     cursor: pointer;
 }

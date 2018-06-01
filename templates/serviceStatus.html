@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Service Status</title>
+
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
           integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css"
@@ -11,7 +12,7 @@
 </head>
 <body class="text-center">
 <div class="cover-container d-flex h-100 p-3 mx-auto flex-column">
-    <header class="masthead mb-auto">
+    <header class="masthead">
         <div class="inner">
             <h3 class="masthead-brand">Status</h3>
             <nav class="nav nav-masthead justify-content-center">
@@ -20,10 +21,13 @@
             </nav>
         </div>
     </header>
-    <main role="main" class="inner cover table-responsive">
+    <main role="main" class="inner cover table-responsive" id="react-root">
+
         <div class="alert alert-{{ .OverallStatus.ClassName }}" role="alert">
             <h4 class="alert-heading">{{ .OverallStatus.Overview }}</h4>
         </div>
+
+
         <table class="table table-dark table-striped">
             <caption>Last Updated: <span id="last-update">{{ .Timestamp }}</span></caption>
             <thead class="thead-light table-sm">
@@ -37,7 +41,7 @@
         {{range $groupName, $group := .Groups}}
             <thead id="{{ $groupName }}" class="thead-dark group" data-for="services-{{ $groupName }}">
             <tr>
-                <th colspan="2" style="text-align: left; padding-left: 2rem;">{{ $groupName }}</th>
+                <th colspan="2" class="group-name">{{ $groupName }}</th>
                 <th class="status bg-{{ $group.Status.ClassName }}">
                     <span class="status-value">{{ $group.Status }}</span> <i class="status-icon fas {{ $group.Status.Icon }}"></i>
                 </th>
@@ -47,7 +51,7 @@
             <tbody id="services-{{ $groupName }}" class="table-sm {{if eq $group.Status 0}}hidden{{end}}">
             {{ range $group.Services }}
             <tr id="{{ .ID }}">
-                <td style="text-align: left;">{{ .Name }}</td>
+                <td class="service">{{ .Name }}</td>
                 <td class="counts">{{ .Running }} / {{ .Replicas }}</td>
                 <td class="status bg-{{ .Status.ClassName }}">
                     <span class="status-value">{{ .Status }}</span> <i class="status-icon fas {{ .Status.Icon }}"></i>
@@ -59,67 +63,14 @@
         {{end}}
         </table>
     </main>
-    <footer class="mastfoot mt-auto">
-        <div class="inner">
-            <p>Cover template for <a href="https://getbootstrap.com/">Bootstrap</a>, by <a
-                    href="https://twitter.com/mdo">@mdo</a>.</p>
-        </div>
-    </footer>
-    <script type="application/javascript" src="https://moment.github.io/luxon/global/luxon.min.js"></script>
-    <script type="application/javascript">
-        "use strict";
-
-        document.querySelectorAll('thead[data-for]').forEach((thead) => {
-            thead.addEventListener('click', (evt) => {
-                const forId = evt.currentTarget.dataset['for'];
-                if (forId != null) {
-                    const tbody = document.getElementById(forId);
-                    if (tbody.classList.contains('hidden')) {
-                        tbody.classList.remove('hidden');
-                        tbody.classList.remove('manual');
-                    } else {
-                        tbody.classList.add('hidden');
-                        tbody.classList.add('manual');
-                    }
-                }
-            });
-        });
-
-        function updateStatus(status, base) {
-            base.querySelector(".status-value").innerText = status.Value;
-            base.querySelector('.status-icon').className = `status-icon fas ${status.Icon}`;
-            base.querySelector('.status').className = `status bg-${status.ClassName}`;
-        }
-
-        const lastUpdate = document.getElementById("last-update");
-        window.setInterval(
-                async () => {
-                    const current = await (await fetch('/current')).json();
-
-                    for (const [groupName, group] of Object.entries(current.Groups)) {
-                        updateStatus(group.Status, document.getElementById(groupName));
-
-                        const tbody = document.getElementById(`services-${groupName}`);
-                        if (group.Status.Value !== 'Operational') {
-                            tbody.classList.remove('hidden');
-                        } else {
-                            if (!tbody.classList.contains('manual')) {
-                                tbody.classList.add('hidden');
-                            }
-                        }
-
-                        for (const service of group.Services) {
-                            const row = document.getElementById(service.ID);
-                            updateStatus(service.Status, row);
-                            row.querySelector(".counts").innerText = `${service.Running} / ${service.Replicas}`;
-                        }
-                    }
-
-                    lastUpdate.innerText = luxon.DateTime.fromISO(current.Timestamp).toFormat("ccc d LLL yyyy HH:mm:ss");
-                },
-                10000 // 10sec
-        );
-    </script>
+    <script crossorigin src="https://unpkg.com/react@16/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
+    {{/*
+    <script crossorigin src="https://unpkg.com/react@16/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@16/umd/react-dom.production.min.js"></script>
+    */}}
+    <script src="https://moment.github.io/luxon/global/luxon.min.js"></script>
+    <script src="static/react-status.js"></script>
 </div>
 </body>
 </html>
