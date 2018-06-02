@@ -3,6 +3,7 @@ package docker
 import (
 	"time"
 	"fmt"
+	"swarm-status/persist"
 )
 
 type History struct {
@@ -11,7 +12,7 @@ type History struct {
 }
 
 type HistoryArray []*History
-func PollServiceStatus(history *HistoryArray) {
+func PollServiceStatus(history *HistoryArray, persistPath string) {
 	for {
 		next, err := ReadServiceList()
 
@@ -27,6 +28,8 @@ func PollServiceStatus(history *HistoryArray) {
 				Timestamp: time.Now().UTC(),
 			}
 		}
+
+		persist.Save(persistPath, *history);
 
 		time.Sleep(time.Minute * 5)
 	}

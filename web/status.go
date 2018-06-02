@@ -5,18 +5,20 @@ import "encoding/json"
 type Status int
 
 const (
-	Operational Status = iota
+	Stopped		Status = iota
+	Operational
 	Unhealthy
 	Critical
 )
 
 func (status Status) String() string {
 	names := [...]string{
+		"Stopped",
 		"Operational",
 		"Unhealthy",
 		"Critical",
 	}
-	if status < Operational || status > Critical {
+	if status < Stopped || status > Critical {
 		return "Unknown"
 	}
 
@@ -35,11 +37,12 @@ func (status Status) MarshalJSON() ([]byte, error) {
 
 func (status Status) ClassName() string {
 	classNames := [...]string{
+		"secondary",
 		"success",
 		"warning",
 		"danger",
 	}
-	if status < Operational || status > Critical {
+	if status < Stopped || status > Critical {
 		return ""
 	}
 
@@ -48,11 +51,12 @@ func (status Status) ClassName() string {
 
 func (status Status) Icon() string {
 	icons := [...]string{
+		"",
 		"fa-check-circle",
 		"fa-bell",
 		"fa-exclamation-triangle",
 	}
-	if status < Operational || status > Critical {
+	if status < Stopped || status > Critical {
 		return ""
 	}
 
@@ -61,11 +65,12 @@ func (status Status) Icon() string {
 
 func (status Status) Overview() string {
 	classNames := [...]string{
+		"Stopped",
 		"All Systems Operational",
 		"System Unhealthy",
 		"System Critical",
 	}
-	if status < Operational || status > Critical {
+	if status < Stopped || status > Critical {
 		return ""
 	}
 

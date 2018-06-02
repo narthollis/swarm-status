@@ -4,13 +4,21 @@ import (
 	"net/http"
 	"swarm-status/web"
 	"swarm-status/docker"
+	"os"
+	"swarm-status/persist"
 )
 
 func main() {
+	persistPath := os.Getenv("HISTORY_PERSIST_PATH")
+	if persistPath == "" {
+		persistPath = "history.json"
+	}
+
 	history := make(docker.HistoryArray, 288)
+	persist.Load(persistPath, &history)
 
 	// Start the background poll
-	go docker.PollServiceStatus(&history)
+	go docker.PollServiceStatus(&history, persistPath)
 
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 

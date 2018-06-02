@@ -16,7 +16,9 @@ type ServiceStatusPageData struct {
 }
 
 func computeStatus(replicas uint64, running uint64) Status {
-	if replicas == running {
+	if replicas == 0 {
+		return Stopped
+	} else if replicas == running {
 		return Operational
 	} else if running > 0 {
 		return Unhealthy
