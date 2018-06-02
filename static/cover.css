@@ -137,6 +137,21 @@ tbody.hidden {
     float: right;
 }
 
-.history {
-    width: 288px;
+td.history {
+    width: 292px;
+    padding: 0!important;
+    position: relative;
+}
+td.history > div {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 2px;
+    right: 2px;
+}
+td.history > div > div {
+    width: 1px;
+    height: 100%;
+    float: left;
+    opacity: 0.8;
 }
