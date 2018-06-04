@@ -57,7 +57,7 @@ func ReadServiceList() ([]ServiceState, error) {
 			var t time.Time
 
 			for _, task := range tasks {
-				if task.ServiceID == service.ID { //&& task.Status.State == "running" {
+				if task.ServiceID == service.ID && task.Status.State == "running" {
 					runningTasks += 1
 					if t.Before(task.Status.Timestamp) {
 						t = task.Status.Timestamp
