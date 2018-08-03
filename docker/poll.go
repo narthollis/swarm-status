@@ -12,26 +12,30 @@ type History struct {
 }
 
 type HistoryArray []*History
-func PollServiceStatus(history *HistoryArray, persistPath string) {
+func pollServiceStatus(history *HistoryArray, persistPath string, quit chan bool) {
 	for {
-		next, err := ReadServiceList()
+		select {
+		case <- quit:
+			return
+		default:
+			next, err := ReadServiceList()
 
-		if err != nil {
-			fmt.Println(err)
-		} else {
-			for i := len(*history) - 2; i >= 0; i-- {
-				(*history)[i+1] = (*history)[i]
+			if err != nil {
+				fmt.Println(err)
+			} else {
+				for i := len(*history) - 2; i >= 0; i-- {
+					(*history)[i+1] = (*history)[i]
+				}
+
+				(*history)[0] = &History{
+					Status: next,
+					Timestamp: time.Now().UTC(),
+				}
 			}
 
-			(*history)[0] = &History{
-				Status: next,
-				Timestamp: time.Now().UTC(),
-			}
+			persist.Save(persistPath, *history)
+
+			time.Sleep(time.Minute * 5)
 		}
-
-		persist.Save(persistPath, *history);
-
-		time.Sleep(time.Minute * 5)
 	}
 }
-

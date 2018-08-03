@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Service Status</title>
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+          integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css"
+          integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous">
+    <link rel="stylesheet" href="static/cover.css"/>
+</head>
+<body class="text-center">
+<div class="container-fluid d-flex h-100 p-3 mx-auto flex-column">
+    <header class="masthead">
+        <div class="inner">
+            <h3 class="masthead-brand">Status</h3>
+            <nav class="nav nav-masthead justify-content-center">
+                <a class="nav-link" href="./">Services</a>
+                <a class="nav-link active" href="./metrics">Metrics</a>
+            </nav>
+        </div>
+    </header>
+    <main role="main" class="inner cover" id="react-root" style="flex:1">
+        <iframe src="{{ .MetricPageSource }}" width="100%" height="100%" style="flex:1;border:0"></iframe>
+    </main>
+</div>
+</body>
+</html>

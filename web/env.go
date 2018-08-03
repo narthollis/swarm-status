@@ -6,7 +6,7 @@ import (
 )
 
 type EnvSettings struct {
-	DisplayNameKey, GroupNameKey string
+	DisplayNameKey, GroupNameKey, MetricPageSource string
 }
 
 func GetEnvSettings() EnvSettings {
@@ -20,9 +20,12 @@ func GetEnvSettings() EnvSettings {
 		groupNameKey = "com.example.display.group"
 	}
 
+	metricPageSource := os.Getenv("METRIC_PAGE_SRC")
+
 	return EnvSettings{
-		DisplayNameKey: displayNameKey,
-		GroupNameKey:   groupNameKey,
+		DisplayNameKey:   displayNameKey,
+		GroupNameKey:     groupNameKey,
+		MetricPageSource: metricPageSource,
 	}
 }
 
