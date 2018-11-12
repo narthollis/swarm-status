@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"net/http"
 	"swarm-status/web"
 	"swarm-status/docker"
@@ -18,7 +19,8 @@ func main() {
 	persist.Load(persistPath, &history)
 
 	// Start the background poll
-	go docker.PollServiceStatus(&history, persistPath)
+	poller := &docker.PollServiceStatus{}
+	poller.Run(&history, persistPath)
 
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 
@@ -31,5 +33,18 @@ func main() {
 
 	http.HandleFunc("/", web.MakeRootHandler())
 
-	http.ListenAndServe(":8080", nil)
+	certPath := os.Getenv("TLS_CERT")
+	keyPath := os.Getenv("TLS_KEY")
+
+	var err error
+	if certPath != "" && keyPath != "" {
+		err = http.ListenAndServeTLS(":8080", certPath, keyPath, nil)
+	} else {
+		err = http.ListenAndServe(":8080", nil)
+	}
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	poller.Shutdown()
 }
